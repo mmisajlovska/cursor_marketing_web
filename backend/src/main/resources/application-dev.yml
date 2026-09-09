@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/promorunner}
+    username: ${SPRING_DATASOURCE_USERNAME:promorunner}
+    password: ${SPRING_DATASOURCE_PASSWORD:promorunner}
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+
+app:
+  redis:
+    enabled: ${APP_REDIS_ENABLED:false}
+  tenancy:
+    allow-dev-default-slug: true
+  cors:
+    additional-origins:
+      - http://localhost:5173
+
+logging:
+  level:
+    io.promorunner: DEBUG
