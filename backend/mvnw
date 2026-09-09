@@ -1,0 +1,112 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup batch script, version 3.3.2
+
+set -euf
+[ "${MVNW_VERBOSE-}" != true ] || set -x
+
+die() { printf '%s\n' "$1" >&2; exit 1; }
+
+native_path() { printf '%s\n' "$1"; }
+case "$(uname)" in
+CYGWIN* | MINGW*)
+  [ -z "${JAVA_HOME-}" ] || JAVA_HOME="$(cygpath --unix "$JAVA_HOME")"
+  native_path() { cygpath --path --windows "$1"; }
+  ;;
+esac
+
+set_java_home() {
+  if [ -n "${JAVA_HOME-}" ]; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ]; then
+      JAVACMD="$JAVA_HOME/jre/sh/java"
+      JAVACCMD="$JAVA_HOME/jre/sh/javac"
+    else
+      JAVACMD="$JAVA_HOME/bin/java"
+      JAVACCMD="$JAVA_HOME/bin/javac"
+      if [ ! -x "$JAVACMD" ] || [ ! -x "$JAVACCMD" ]; then
+        die "JAVA_HOME is set to an invalid directory: $JAVA_HOME"
+      fi
+    fi
+  else
+    JAVACMD="$(
+      command -v java
+    )" || die "java command not found and JAVA_HOME is not set"
+    JAVACCMD="$(
+      command -v javac
+    )" || true
+  fi
+}
+
+hash_string() {
+  str="${1:-}" h=0
+  while [ -n "$str" ]; do
+    char="${str%"${str#?}"}"
+    h=$(((h * 31 + $(LC_CTYPE=C printf '%d' "'$char")) % 4294967296))
+    str="${str#?}"
+  done
+  printf '%x\n' "$h"
+}
+
+verbose() { :; }
+[ "${MVNW_VERBOSE-}" != true ] || verbose() { printf '%s\n' "${1-}"; }
+
+exec_maven() {
+  unset MVNW_VERBOSE MVNW_USERNAME MVNW_PASSWORD MVNW_REPOURL || true
+  exec "$MAVEN_HOME/bin/mvn" "$@" || die "cannot exec Maven"
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+  --) shift; break ;;
+  *) break ;;
+  esac
+done
+
+MAVEN_HOME="${MAVEN_USER_HOME:-${HOME}/.m2}/wrapper/dists/apache-maven-3.9.9/$(hash_string "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.zip")"
+
+if [ -d "$MAVEN_HOME" ]; then
+  verbose "found existing Maven at $MAVEN_HOME"
+  exec_maven "$@"
+fi
+
+set_java_home
+
+TRIMMED_REPO="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.zip"
+if [ -n "${MVNW_REPOURL-}" ]; then
+  TRIMMED_REPO="${MVNW_REPOURL}/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.zip"
+fi
+
+verbose "Downloading Maven from $TRIMMED_REPO"
+mkdir -p "${MAVEN_HOME%/*}"
+TMPDIR="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR"' EXIT INT HUP
+
+if command -v curl >/dev/null 2>&1; then
+  curl --silent --show-error --fail --location --output "$TMPDIR/maven.zip" "$TRIMMED_REPO"
+elif command -v wget >/dev/null 2>&1; then
+  wget --quiet -O "$TMPDIR/maven.zip" "$TRIMMED_REPO"
+else
+  die "curl or wget is required to download Maven"
+fi
+
+unzip -qo "$TMPDIR/maven.zip" -d "$TMPDIR" || die "failed to unpack Maven distribution"
+DIR="$(find "$TMPDIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+mv "$DIR" "$MAVEN_HOME"
+exec_maven "$@"

@@ -1,0 +1,17 @@
+app:
+  redis:
+    enabled: false
+  tenancy:
+    allow-dev-default-slug: true
+  cors:
+    additional-origins:
+      - http://localhost:5173
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/promorunner
+    username: ${POSTGRES_USER:promorunner}
+    password: ${POSTGRES_PASSWORD:promorunner}
+  jpa:
+    hibernate:
+      ddl-auto: validate
